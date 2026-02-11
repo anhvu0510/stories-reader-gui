@@ -2081,7 +2081,7 @@
                 segPending.classList.remove('active', 'pending');
             }
 
-            const limit = 500; // Reduce limit for faster loading since we use server pagination
+            const limit = 50; // Reduce limit for faster loading since we use server pagination
             const url = `/api/books/${bid}/chapters?page=${pageNum}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}${filterParam}`;
 
             const data = await api(url);
