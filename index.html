@@ -1,1 +1,3190 @@
-<h1>Hello World</h1>
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1121">
+    <title>Đọc Truyện Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Playfair+Display:wght@700&family=Quicksand:wght@500;600;700&family=Patrick+Hand&display=swap"
+        rel="stylesheet">
+    <style>
+        /* --- THEME CONFIG --- */
+        :root {
+            --bg-app: #0b1121;
+            --bg-surface: #151e32;
+            --bg-glass: rgba(11, 17, 33, 0.92);
+            --bg-input: #1c263d;
+
+            --text-main: #eceff4;
+            --text-sub: #94a3b8;
+
+            --accent: #ff4757;
+            --accent-dark: #d63031;
+            --accent-glow: rgba(255, 71, 87, 0.3);
+
+            --warning: #f1c40f;
+            --warning-bg: rgba(241, 196, 15, 0.15);
+
+            --header-h: 56px;
+            --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+
+            /* User Settings Variables */
+            --reader-font-size: 1.1rem;
+            --reader-font-family: 'Merriweather', serif;
+            --reader-line-height: 1.8;
+            --reader-text-align: justify;
+            --reader-word-spacing: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: var(--bg-app);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-top: var(--header-h);
+            padding-bottom: calc(80px + var(--safe-area-bottom));
+            overflow-x: hidden;
+        }
+
+        .msreadout-line-highlight:not(.msreadout-inactive-highlight) {
+            background: linear-gradient(90deg, #ffe8a3, #fff6cc) !important;
+            border-radius: 4px !important;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1) !important;
+            transition: background 0.3s ease !important;
+        }
+
+        .msreadout-word-highlight {
+            padding: 0px !important;
+        }
+
+
+        /* --- UTILS --- */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            top: 90px;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-h);
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 90;
+            display: flex;
+            align-items: center;
+            padding: 0 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .header.hide {
+            transform: translateY(-100%);
+        }
+
+        .header-inner {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50vw;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: background 0.2s;
+        }
+
+        .icon-btn:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-btn.small {
+            width: 36px;
+            height: 36px;
+        }
+
+        /* --- SEARCH --- */
+        .search-area {
+            position: sticky;
+            top: var(--header-h);
+            z-index: 80;
+            padding: 0.8rem 1rem;
+            background: var(--bg-app);
+            transition: transform 0.3s;
+        }
+
+        .header.hide+main .search-area {
+            transform: translateY(-100%);
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px 12px 48px;
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            background: #1f2a40;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-sub);
+            pointer-events: none;
+            font-size: 1.1rem;
+        }
+
+        /* --- BOOK LIST --- */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .book-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-surface);
+            padding: 0.4rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s;
+        }
+
+        .book-row:active {
+            transform: scale(0.98);
+            background: #1e2a45;
+        }
+
+        .book-icon {
+            width: 50px;
+            height: 70px;
+            background: linear-gradient(135deg, #2c0b0e, #5a1a1a);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.4);
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .book-info {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .book-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .book-meta {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            flex-direction: column;
+        }
+
+        .tag {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            /* margin-right: 16rem; */
+        }
+
+        /* --- CHAPTER LIST --- */
+        .chapter-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 1rem;
+        }
+
+        .chapter-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-surface);
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .chapter-row.pending-row {
+            border-left: 3px solid var(--warning);
+            background: rgba(241, 196, 15, 0.05);
+        }
+
+        .chapter-row:active {
+            background: #25314d;
+        }
+
+        .ch-title {
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+        }
+
+        .ch-sub {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-pending {
+            font-size: 0.65rem;
+            color: var(--warning);
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid rgba(241, 196, 15, 0.3);
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .badge-pending-list {
+            font-size: 0.7rem;
+            color: var(--warning);
+            margin-left: auto;
+            font-style: italic;
+        }
+
+        /* --- REDESIGNED FILTER TOOLBAR (Mobile Optimized) --- */
+        .filter-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 16px 0 12px;
+            padding: 0;
+            background: transparent;
+            border: none;
+        }
+
+        /* Segmented Control (Tabs) */
+        .segmented-control {
+            display: flex;
+            background: #151e32;
+            padding: 4px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            flex: 1;
+            /* width: fit-content; */
+        }
+
+        .segment-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .segment-item.active {
+            background: var(--accent);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .segment-item.active.pending {
+            color: var(--warning);
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid rgba(241, 196, 15, 0.2);
+        }
+
+        /* Sort Button Wrapper (Icon Button) */
+        .sort-btn-wrapper {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            background: #151e32;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-sub);
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .sort-btn-wrapper:active {
+            transform: scale(0.92);
+            background: var(--bg-input);
+            color: var(--accent);
+        }
+
+        /* Hide the native select but keep functionality */
+        .sort-select {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        /* Batch Action Bar */
+        .batch-action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid var(--warning);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            color: #f1c40f;
+            animation: fadeIn 0.3s;
+        }
+
+        /* --- READER VIEW --- */
+        .reader-view {
+            background: var(--bg-app);
+            min-height: 100vh;
+        }
+
+        .reader-container {
+            padding: 0;
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .chapter-block {
+            padding: 1rem 1.2rem;
+            min-height: 60vh;
+            position: relative;
+        }
+
+        .reader-text {
+            font-family: var(--reader-font-family);
+            font-size: var(--reader-font-size);
+            line-height: var(--reader-line-height);
+            text-align: var(--reader-text-align);
+            word-spacing: var(--reader-word-spacing);
+            color: #d1d5db;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .reader-text article {
+            margin-bottom: 0.95rem;
+            display: block;
+        }
+
+        .chapter-header-compact {
+            margin: 3rem 0 2rem;
+            padding: 1rem 0;
+            border-top: 1px solid rgba(255, 71, 87, 0.2);
+            border-bottom: 1px solid rgba(255, 71, 87, 0.2);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-align: center;
+            font-family: 'Quicksand', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- GLASS DOCK (REDESIGNED) --- */
+        .glass-dock {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 380px;
+            height: 64px;
+            background: rgba(21, 30, 50, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+            z-index: 2200;
+            transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+        }
+
+        .glass-dock.hide {
+            transform: translate(-50%, 200%);
+        }
+
+        .dock-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .dock-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2px;
+        }
+
+        .dock-btn:active {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(0.92);
+        }
+
+        .dock-btn.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .dock-btn.active-state {
+            color: var(--accent);
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .dock-btn.main-action {
+            width: 56px;
+            height: 56px;
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 15px var(--accent-glow);
+            margin-top: -20px;
+            border: 4px solid var(--bg-app);
+        }
+
+        .dock-btn.main-action:active {
+            transform: scale(0.95) translateY(0px);
+        }
+
+        /* --- SMART SELECTION PILL --- */
+        #selectionTooltip {
+            position: fixed;
+            z-index: 2000;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 0;
+            border-radius: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            transform-origin: center bottom;
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8) translateY(10px);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .tooltip-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .tooltip-btn:last-child {
+            border-right: none;
+        }
+
+        .tooltip-btn:active {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .tooltip-icon {
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        /* --- BOTTOM SHEETS --- */
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(2px);
+        }
+
+        .sheet-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #151e32;
+            border-radius: 24px 24px 0 0;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 5501;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            padding-bottom: var(--safe-area-bottom);
+        }
+
+        .bottom-sheet.show {
+            transform: translateY(0);
+        }
+
+        .sheet-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sheet-title {
+            flex: 1;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .sheet-close {
+            font-size: 1.5rem;
+            color: var(--text-sub);
+            padding: 5px;
+            margin-left: 20px;
+            cursor: pointer;
+        }
+
+        .sheet-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* --- FORMS & BUTTONS --- */
+        .report-form label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .report-input,
+        .form-select {
+            width: 100%;
+            background: #0b1121;
+            border: 1px solid #2e3a52;
+            padding: 8px;
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            appearance: none;
+        }
+
+        .form-select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+
+        .report-input:focus,
+        .form-select:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .report-input[readonly] {
+            opacity: 0.7;
+            border-style: dashed;
+        }
+
+        .chip-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #2e3a52;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .chip.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--accent-glow);
+            transition: transform 0.1s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #443200;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3);
+        }
+
+        .btn-warning:active {
+            transform: scale(0.95);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid #2e3a52;
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-outline:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-xs {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #2e3a52;
+            background: #151e32;
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        .btn-xs:active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Settings UI */
+        .setting-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .font-controls {
+            display: flex;
+            gap: 12px;
+            background: #0b1121;
+            padding: 6px;
+            border-radius: 14px;
+            border: 1px solid #2e3a52;
+        }
+
+        .font-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: none;
+            background: #151e32;
+            color: white;
+            font-weight: bold;
+        }
+
+        .font-btn:active {
+            background: var(--accent);
+        }
+
+        /* Side Drawer */
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 85%;
+            max-width: 320px;
+            background: var(--bg-surface);
+            z-index: 2101;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .side-drawer.show {
+            transform: translateX(0);
+        }
+
+        .drawer-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+        }
+
+        .drawer-item.active {
+            border-left: 3px solid var(--accent);
+            background: rgba(255, 71, 87, 0.05);
+        }
+
+        /* --- EDIT WORD SHEET STYLES --- */
+        .word-list-container {
+            max-height: 200px;
+            min-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            border: 1px solid #2e3a52;
+            border-radius: 12px;
+            background: #0b1121;
+        }
+
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #2e3a52;
+        }
+
+        .word-item:last-child {
+            border-bottom: none;
+        }
+
+        .word-content {
+            flex: 1;
+            font-size: 0.9rem;
+            margin-left: 20px;
+            display: flex;
+            text-align: center;
+        }
+
+        .word-orig {
+            color: #e2e8f0;
+            font-weight: 600;
+            width: 50%;
+        }
+
+        .word-arrow {
+            color: var(--text-sub);
+            margin: 0 8px;
+        }
+
+        .word-replace {
+            color: var(--accent);
+            width: 50%;
+        }
+
+        .word-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-action {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .icon-action:hover {
+            color: white;
+        }
+
+        .icon-action.delete:hover {
+            color: #ff4757;
+        }
+
+
+        * --- TRANSLATION SHEET STYLES --- */ .form-group {
+            /* margin: 150px 0px; */
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .book-select-container {
+            background: #0b1121;
+            border: 1px solid #2e3a52;
+            border-radius: 12px;
+            overflow: hidden;
+            max-height: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .book-search-input {
+            width: 100%;
+            background: #0f1629;
+            border: none;
+            border-bottom: 1px solid #2e3a52;
+            padding: 12px;
+            color: white;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .book-checkbox-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 8px;
+        }
+
+        .book-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            gap: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .book-checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .book-checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .book-checkbox-name {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #e2e8f0;
+            flex: 1;
+        }
+
+        /* Tabs */
+        .tab-group {
+            display: flex;
+            background: #0b1121;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 16px;
+            border: 1px solid #2e3a52;
+        }
+
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tab-item.active {
+            background: #2e3a52;
+            color: white;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2e3a52;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.toggle-slider {
+            background-color: var(--accent);
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Modal for Confirmation */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 6000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .confirm-card {
+            background: #1e293b;
+            width: 100%;
+            max-width: 340px;
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.show .confirm-card {
+            transform: scale(1);
+        }
+
+        .confirm-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: white;
+        }
+
+        .confirm-detail {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .confirm-value {
+            color: #e2e8f0;
+            font-weight: 600;
+            text-align: right;
+            max-width: 60%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .confirm-list-container {
+            margin-top: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .confirm-list-item {
+            font-size: 0.85rem;
+            color: #ccc;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .row-items {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .active-filter {
+            background: rgba(241, 196, 15, 0.2) !important;
+            font-weight: 700 !important;
+        }
+
+        .form-group-header {
+            /* display: flex; */
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .form-label-input {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Progress Bar -->
+    <div id="readProgress"
+        style="position: fixed; top: 0; left:0; height:3px; background:var(--accent); width:0%; z-index: 1100; transition: width 0.1s;"
+        aria-hidden="true"></div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" aria-hidden="true">Nội dung thông báo</div>
+
+    <!-- Header -->
+    <header class="header" id="mainHeader" aria-hidden="true">
+        <div class="header-inner">
+            <div style="display:flex; align-items:center; flex:1; min-width:0;">
+
+                <button class="icon-btn hidden" id="backBtn" onclick="handleBack()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <button class="dock-btn" onclick="setScreen('home')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                </button>
+                <div class="brand" id="pageTitle" onclick="window.scrollTo({top:0, behavior:'smooth'})">NovelReader
+                </div>
+            </div>
+
+            <button class="dock-btn" onclick="handleTranslate()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                    stroke-linejoin="round" width="20" height="20">
+                    <!-- left stylized 'A' card -->
+                    <rect x="2" y="3.5" width="8" height="13" rx="1" />
+                    <path d="M4.2 11h3" />
+                    <path d="M3.2 14.2L5.2 8.6L7.2 14.2" />
+
+                    <!-- right '文'-like card -->
+                    <rect x="14" y="3.5" width="8" height="13" rx="1" />
+                    <path d="M16.5 8.5h4" />
+                    <path d="M16.5 11.5h4" />
+                    <path d="M16.5 14.5h4" />
+
+                    <!-- two small curved arrows between them -->
+                    <path d="M11 9.5c0.8-1 2-1.7 3.3-1.9" />
+                    <polyline points="14.8 7.3 15.6 6 13.6 6.4" />
+                    <path d="M13.5 16.5c-0.9 1-2.1 1.7-3.4 1.9" />
+                    <polyline points="9.8 18.7 9 20 11 19.6" />
+                </svg>
+            </button>
+            <!-- Header Actions: History & Settings (moved up) -->
+            <div class="header-actions">
+                <button class="icon-btn small hidden" id="headerSettingsBtn" onclick="toggleDrawer('settings')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"><text x="50%" y="55%" dominant-baseline="middle"
+                            text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">Aa</text></svg>
+                </button>
+                <button class="icon-btn small" onclick="toggleDrawer('history')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <!-- HOME -->
+        <div id="screen-home" aria-hidden="true">
+            <div class="search-area" aria-hidden="true">
+                <div style="position:relative; max-width:800px; margin:0 auto;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Tìm kiếm truyện...">
+                </div>
+            </div>
+            <div class="container" aria-hidden="true">
+                <div class="book-list" id="bookList"></div>
+                <div class="pagination" id="homePagination"
+                    style="display:flex; justify-content:center; gap:10px; margin:20px 0;"></div>
+            </div>
+        </div>
+
+        <!-- CHAPTERS LIST -->
+        <div id="screen-chapters" aria-hidden="true" class="container hidden">
+
+            <div class="pagination" id="chapterPagination"
+                style="display:flex; justify-content:center; gap:10px; margin:20px 0;"></div>
+
+            <div
+                style="padding: 1.5rem 0 0.5rem; color: var(--text-sub); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                Danh sách chương</div>
+
+            <!-- REDESIGNED FILTER TOOLBAR -->
+            <div class="filter-toolbar">
+                <!-- Segmented Control for State -->
+                <div class="segmented-control">
+                    <div id="seg-all" class="segment-item active" onclick="setFilterState('all')">Tất cả</div>
+                    <div id="seg-pending" class="segment-item" onclick="setFilterState('pending')">Chưa dịch</div>
+                </div>
+
+                <!-- Styled Sort Button -->
+                <div class="sort-btn-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18M7 12h10M10 18h4" />
+                    </svg>
+                    <select id="sortOption" class="sort-select" onchange="applyFilters()">
+                        <option value="num_asc">Chương: Thấp → Cao</option>
+                        <option value="num_desc">Chương: Cao → Thấp</option>
+                        <option value="time_new">Ngày: Mới nhất</option>
+                        <option value="time_old">Ngày: Cũ nhất</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- BATCH ACTION (Appears only when Pending is filtered) -->
+            <div id="batchActionBar" class="batch-action-bar hidden">
+                <span style="font-size: 0.9rem; font-weight: 600;">Danh sách chưa dịch</span>
+                <button class="btn-xs" onclick="handleManagePending()"
+                    style="background: var(--warning); color: #443200; border: none; font-weight: 700; padding: 8px 16px;">Dịch
+                    nhanh</button>
+            </div>
+
+            <div id="chapterList" class="chapter-list"></div>
+            <div class="pagination" id="chapterPagination2"
+                style="display:flex; justify-content:center; gap:10px; margin:20px 0;"></div>
+        </div>
+
+        <!-- READER -->
+        <div id="screen-reader" class="reader-view hidden">
+            <div class="reader-container" id="readerContainer"></div>
+
+            <div id="loadingNext" aria-hidden="true" class="hidden" style="text-align: center; padding: 3rem; color: var(--accent);">
+                <div class="fade-in">✦ Đang tải chương tiếp...</div>
+            </div>
+            <!-- <div style="height: 100px;"></div> -->
+        </div>
+    </main>
+
+    <!-- GLASS DOCK (Mobile Navigation) -->
+    <nav class="glass-dock" id="glassDock" aria-hidden="true">
+
+        <button class="dock-btn" id="btnPrev" onclick="navManual('prev')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
+        </button>
+
+
+
+        <button class="dock-btn" onclick="handleTranslate()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                stroke-linejoin="round" width="20" height="20">
+                <!-- left stylized 'A' card -->
+                <rect x="2" y="3.5" width="8" height="13" rx="1" />
+                <path d="M4.2 11h3" />
+                <path d="M3.2 14.2L5.2 8.6L7.2 14.2" />
+
+                <!-- right '文'-like card -->
+                <rect x="14" y="3.5" width="8" height="13" rx="1" />
+                <path d="M16.5 8.5h4" />
+                <path d="M16.5 11.5h4" />
+                <path d="M16.5 14.5h4" />
+
+                <!-- two small curved arrows between them -->
+                <path d="M11 9.5c0.8-1 2-1.7 3.3-1.9" />
+                <polyline points="14.8 7.3 15.6 6 13.6 6.4" />
+                <path d="M13.5 16.5c-0.9 1-2.1 1.7-3.4 1.9" />
+                <polyline points="9.8 18.7 9 20 11 19.6" />
+            </svg>
+        </button>
+
+
+
+
+
+        <button class="dock-btn main-action" onclick="toggleDrawer('menu')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+        </button>
+
+
+
+        <!-- NEW BUTTON: Spell Check / Report (NOW: Edit Word Sheet) -->
+        <button class="dock-btn" id="btnReport" onclick="openEditWordSheet()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        </button>
+
+
+        <button class="dock-btn" id="btnNext" onclick="navManual('next')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6" />
+            </svg>
+        </button>
+
+    </nav>
+
+    <!-- SELECTION ACTION (Pill Shape) -->
+    <div id="selectionTooltip" class="hidden" onmousedown="event.preventDefault(); openEditWordSheet();"
+        ontouchstart="event.preventDefault(); openEditWordSheet()" aria-hidden="true">
+        <button class="tooltip-btn">
+            <span class="tooltip-icon">✎</span>
+            <!-- <span>Báo lỗi đoạn này</span> -->
+        </button>
+        <!-- <button class="tooltip-btn" onclick="event.stopPropagation(); copySelection();">
+            <span class="tooltip-icon">📋</span>
+        </button> -->
+    </div>
+
+    <!-- GLOBAL OVERLAY -->
+    <div class="sheet-overlay" id="sheetOverlay" onclick="closeAllDrawers()" aria-hidden="true"></div>
+
+    <!-- TRANSLATION SHEET -->
+    <div class="bottom-sheet" id="translationSheet" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Cấu hình Dịch AI</div>
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+        </div>
+        <div class="sheet-body">
+            <!-- Tabs -->
+            <div class="tab-group">
+                <div class="tab-item active" id="tabBtnCurrent" onclick="switchTransTab('current')">Hiện tại</div>
+                <div class="tab-item" id="tabBtnBatchChapter" onclick="switchTransTab('batch_chapter')">Nhiều chương
+                </div>
+                <div class="tab-item" id="tabBtnStory" onclick="switchTransTab('story')">Truyện</div>
+            </div>
+
+
+            <div id="tabContentCurrent">
+                <div id="tabContentCurrentText"
+                    style="padding:10px 0; color:var(--accent); font-weight:600; text-align:center; margin-bottom:10px;">
+                    Dịch và đọc ngay chương đang mở
+                </div>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="form-group">
+                <label class="form-label">Chọn Model AI</label>
+                <select id="aiModelSelect" class="form-select">
+                    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                </select>
+            </div>
+
+            <!-- Tab Content: Current -->
+
+
+            <!-- Tab Content: Batch Chapter -->
+            <div id="tabContentBatchChapter" class="hidden">
+                <div class="form-group">
+                    <label class="form-label">Cấu hình tải danh sách</label>
+                    <div style="display:flex; gap:10px; margin-bottom:16px;">
+                        <select id="batchLoadMode" class="form-select" style="margin-bottom:0; flex:1;"
+                            onchange="loadBatchChapters()">
+                            <option value="all">Tất cả chương</option>
+                            <option value="pending">Chương chưa dịch</option>
+                        </select>
+                        <input type="number" id="batchLoadLimit" class="report-input" value="50000" placeholder="Limit"
+                            style="margin-bottom:0; width: 80px;" onchange="loadBatchChapters()">
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="form-label" style="margin-bottom:0">Danh sách chương</label>
+                        <div style="display:flex; gap:8px;">
+                            <span class="tag" onclick="toggleBatchSelection(true)" style="cursor:pointer;">Tất cả</span>
+                            <span class="tag" onclick="selectBatchRange()"
+                                style="cursor:pointer; background:rgba(71, 255, 87, 0.15); color:#2ecc71;">Phạm
+                                vi</span>
+                            <span class="tag" onclick="toggleBatchSelection(false)"
+                                style="background:rgba(255,255,255,0.1); color:#ccc; cursor:pointer;">Bỏ</span>
+                        </div>
+                    </div>
+
+                    <div class="book-select-container">
+                        <input type="text" class="book-search-input" id="transChapterSearch"
+                            placeholder="Lọc trong danh sách đã tải..." oninput="filterTranslationChapters(this.value)">
+                        <div class="book-checkbox-list" id="transChapterList">
+                            <div style="padding:10px;color:#888;text-align:center;">Hãy chọn chế độ và tải danh sách
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Story -->
+            <div aria-hidden="true" id="tabContentStory" class="hidden">
+                <div class="form-group">
+                    <label class="form-label">Chọn truyện cần dịch</label>
+                    <div class="book-select-container">
+                        <input type="text" class="book-search-input" id="transBookSearch"
+                            placeholder="Tìm tên truyện..." oninput="filterTranslationBooks(this.value)">
+                        <div class="book-checkbox-list" id="transBookList">
+                            <!-- Populated by JS -->
+                            <div style="padding:10px;color:#888;">Đang tải danh sách...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Word Limits -->
+            <div aria-hidden="true" class="form-group flex-row">
+                <div style="flex:1">
+                    <label class="form-label">Min Words</label>
+                    <input type="number" id="transMinWords" class="report-input" value="100" style="margin-bottom:0">
+                </div>
+                <div style="flex:1">
+                    <label class="form-label">Max Words</label>
+                    <input type="number" id="transMaxWords" class="report-input" value="500" style="margin-bottom:0">
+                </div>
+
+                <div style="flex:1">
+                    <label class="form-label">Temperature</label>
+                    <input type="number" id="transTemperature" class="report-input" value="0" step="0.01" min="0"
+                        max="1" style="margin-bottom:0">
+                </div>
+            </div>
+
+            <!-- Toggle Scope -->
+            <div aria-hidden="true" class="form-group"
+                style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0px;">
+                <label aria-hidden="true" class="form-label" style="margin-bottom:0">Dịch lại tất cả (kể cả đã thành
+                    công)</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="transScopeToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div aria-hidden="true" style="font-size:0.8rem; color:#64748b; margin-top:-10px; margin-bottom:20px;">
+                Tắt: Chỉ dịch phần thất bại • Bật: Dịch lại toàn bộ
+            </div>
+
+            <!-- Actions -->
+            <button aria-hidden="true" class="btn-primary" id="btnSubmitTransSheet" onclick="submitTranslation()">Bắt
+                đầu dịch</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div class="modal-overlay" id="confirmModal" aria-hidden="true">
+        <div class="confirm-card">
+            <div class="confirm-title">Xác nhận dịch</div>
+            <div style="border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:15px; padding-bottom:5px;">
+                <div class="confirm-detail"><span>Chế độ:</span> <span id="confMode" class="confirm-value"></span></div>
+                <div class="confirm-detail"><span>Model:</span> <span id="confModel" class="confirm-value"></span></div>
+                <div class="confirm-detail"><span>Phạm vi:</span> <span id="confScope" class="confirm-value"></span>
+                </div>
+                <div class="confirm-detail"><span>Batch Size:</span> <span id="confBatch" class="confirm-value"></span>
+                </div>
+                <div class="confirm-detail"><span>Số lượng:</span> <span id="confCount" class="confirm-value"></span>
+                </div>
+            </div>
+
+            <div style="font-size:0.85rem; font-weight:600; color:#cbd5e1; margin-bottom:5px;">Danh sách chọn:</div>
+            <div class="confirm-list-container" id="confList">
+                <!-- List Items Here -->
+            </div>
+
+            <div style="font-size:0.8rem; color:#94a3b8; line-height:1.4; margin-top:15px;">
+                Yêu cầu sẽ được gửi 1 lần duy nhất vào hàng đợi xử lý nền.
+            </div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeConfirmModal()">Hủy</button>
+                <button class="btn-primary" id="btnRealSubmit" onclick="confirmTranslation()">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- EDIT WORD SHEET (REPLACED REPORT SHEET) -->
+    <div class="bottom-sheet" id="editWordSheet" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Quản lý từ thay thế</div>
+
+            <label class="toggle-switch">
+                <input type="checkbox" id="wordReplaceToggle" onchange="toggleWordReplacement(this.checked)">
+                <span class="toggle-slider"></span>
+            </label>
+
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+
+            
+        </div>
+        <div class="sheet-body">
+
+            <!-- List of Words -->
+            <div class="form-group">
+                <!-- <label class="form-label">Danh sách từ</label> -->
+                <div class="form-group-header">
+                    <input type="text" id="wordSearchInput" class="report-input" placeholder="Tìm từ..."
+                        style="width:55%; height: 100%; margin:15px;" oninput="searchWordList()">
+
+                    <select id="wordFilterSelect" class="form-select" style="width:25%; height: 100%; margin-left:auto;"
+                        onchange="filterWordList()">
+                        <option value="all">Tất cả</option>
+                        <option value="chapter">Chapter</option>
+                        <option value="book">Book</option>
+                        <option value="global">Global</option>
+                    </select>
+
+                </div>
+
+                <div class="word-list-container" id="wordListContainer">
+                    <div style="padding:20px; text-align:center; color:#888;">Đang tải...</div>
+                </div>
+            </div>
+
+
+
+
+
+            <!-- Scope Selection (Segmented Control) -->
+            <div class="form-group">
+                <label class="form-label">Phạm vi áp dụng</label>
+                <div class="segmented-control" id="wordScopeControl">
+                    <div class="segment-item" onclick="selectWordScope('chapter')" id="scope-chapter">Chapter</div>
+                    <div class="segment-item active" onclick="selectWordScope('book')" id="scope-book">Book</div>
+                    <div class="segment-item" onclick="selectWordScope('global')" id="scope-global">Global</div>
+                </div>
+                <input type="hidden" id="selectedWordScope" value="book">
+            </div>
+
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:16px 0;">
+
+            <!-- Add/Edit Form -->
+            <div class="form-group">
+                <label class="form-label">Thêm / Sửa từ</label>
+                <div class="form-label-input">
+                    <input type="text" style="width: 50%; margin: 5px" class="report-input" id="wordOriginal"
+                        placeholder="Match">
+                    <input type="text" style="width: 50%; margin: 5px" class="report-input" id="wordReplace"
+                        placeholder="Replacement">
+                </div>
+
+            </div>
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:16px 0;">
+
+            <!-- Actions -->
+            <button class="btn-primary" onclick="saveWordReplacement()">Lưu thay đổi</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS SHEET -->
+    <div class="bottom-sheet" id="settingsSheet" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Cài đặt giao diện</div>
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+        </div>
+        <div class="sheet-body">
+
+            <div class="setting-row">
+                <span>Tự động tải chương</span>
+                <!-- Simple CSS Switch -->
+                <div style="position:relative; width:44px; height:24px; background:#2e3a52; border-radius:12px; cursor:pointer;"
+                    onclick="toggleLazyLoad(this)">
+                    <div id="lazyToggleCircle"
+                        style="position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:0.3s;">
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="setting-row">
+                <div class="row-items">
+                    <span>Front Size</span>
+                    <div class="font-controls">
+                        <button class="font-btn" onclick="changeFontSize(-1)">A-</button>
+                        <div style="display:flex;align-items:center;padding:0 10px;font-weight:bold"
+                            id="fontSizeDisplay">18
+                        </div>
+                        <button class="font-btn" onclick="changeFontSize(1)">A+</button>
+                    </div>
+                </div>
+
+
+                <div class="row-items">
+                    <span>Word Spacing</span>
+                    <div class="font-controls">
+                        <button class="font-btn" onclick="changeWordSpacing(-1)">A-</button>
+                        <div style="display:flex;align-items:center;padding:0 10px;font-weight:bold"
+                            id="wordSpacingDisplay">0
+                        </div>
+                        <button class="font-btn" onclick="changeWordSpacing(1)">A+</button>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <div class="setting-row">
+
+
+                <div class="row-items">
+                    <span>Group Lines</span>
+                    <div class="font-controls">
+                        <button class="font-btn" onclick="changeSentenceCount(-1)">A-</button>
+                        <div style="display:flex;align-items:center;padding:0 10px;font-weight:bold"
+                            id="sentenceCountDisplay">1
+                        </div>
+                        <button class="font-btn" onclick="changeSentenceCount(1)">A+</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+
+            <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
+                <span>Phông chữ</span>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; width:100%;">
+                    <div class="chip active" style="text-align:center;justify-content:center;"
+                        data-font="'Merriweather', serif" onclick="changeFont(this)">Serif</div>
+                    <div class="chip" style="text-align:center;justify-content:center;"
+                        data-font="'Quicksand', sans-serif" onclick="changeFont(this)">Sans</div>
+                    <div class="chip" style="text-align:center;justify-content:center;"
+                        data-font="'Patrick Hand', cursive" onclick="changeFont(this)">Viết tay</div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- SIDE DRAWERS -->
+    <div class="side-drawer" id="menuDrawer" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Danh sách chương</div>
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+        </div>
+        <div class="sheet-body" id="menuBody" style="padding:0;"></div>
+    </div>
+
+    <div class="side-drawer" id="historyDrawer" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Lịch sử đọc</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="icon-btn small" onclick="clearHistory()" title="Xóa tất cả lịch sử">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </button>
+                <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+            </div>
+        </div>
+        <div class="sheet-body" id="historyBody" style="padding:0;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://vocal-apparently-spaniel.ngrok-free.app';
+        const STORAGE_KEY = 'novel_history_v3';
+        const SETTINGS_KEY = 'novel_settings_v3';
+        const PROGRESS_KEY = 'novel_progress_v3';
+        const TRANS_OPTIONS_KEY = 'novel_trans_opts_v1';
+
+        let appState = {
+            screen: 'home',
+            book: null,
+            chapter: null,
+            scrollPos: 0,
+            activeChapterId: null,
+            nextChapterId: null,
+            prevChapterId: null,
+            isLoading: false,
+            errorType: 'spelling',
+            settings: { fontSize: 18, fontFamily: "'Merriweather', serif", lazyLoad: true, groupLines: 1, wordSpacing: 0, isEnabledReplaceToggle: false },
+            // Translation cache
+            allBooksCache: null,
+            currentBookChaptersCache: null,
+            activeTranslateTab: 'current', // 'current' | 'batch_chapter' | 'story'
+            pendingTranslation: null,
+            pendingChaptersList: [], // Store pending chapters IDs
+            currentChapterList: [], // Store all chapters of current page (original order)
+            filterState: 'all', // NEW: Store filter state
+            sortOption: 'num_asc', // NEW: Store sort option
+            editingWordId: null // To track editing item
+        };
+        let observer;
+        
+        window.onload = () =>
+        {
+            loadSettings();
+            loadTranslationOptions(); // Load saved translation options
+            handleInitialRoute();
+
+            // Search Debounce
+            let timer;
+            document.getElementById('searchInput').addEventListener('input', (e) =>
+            {
+                clearTimeout(timer);
+                timer = setTimeout(() => fetchBooks(1, e.target.value), 600);
+            });
+
+            window.onscroll = onScroll;
+            window.onpopstate = handleInitialRoute;
+
+            observer = new IntersectionObserver(handleIntersect, { root: null, rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+
+            // Selection Logic
+            document.addEventListener('selectionchange', debounce(handleTextSelection, 100));
+            // iOS Selection Fix
+            document.addEventListener('touchend', () => setTimeout(handleTextSelection, 100));
+        };
+
+        function debounce(func, wait)
+        {
+            let timeout;
+            return function (...args)
+            {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        const saveReadProgress = debounce((cid, offset) =>
+        {
+            try
+            {
+                let progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}');
+                progress[cid] = Math.max(0, Math.floor(offset));
+                const keys = Object.keys(progress);
+                if (keys.length > 50) delete progress[keys[0]];
+                localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+            } catch (e) { }
+        }, 300);
+
+        /* --- ROUTING --- */
+        function handleInitialRoute()
+        {
+            const params = new URLSearchParams(window.location.search);
+            const view = params.get('view') || 'home';
+
+            if (view === 'home')
+            {
+                setScreen('home', false);
+                fetchBooks();
+            } else if (view === 'chapters')
+            {
+                const bid = params.get('bookId');
+                const bname = params.get('bookName');
+                if (bid) fetchChapters(bid, bname || 'Mục lục', 1, false);
+            } else if (view === 'reader')
+            {
+                const cid = params.get('chapterId');
+                const bid = params.get('bookId');
+                if (cid)
+                {
+                    appState.book = { id: bid, name: params.get('bookName') || '' };
+                    setupReader(cid, false);
+                }
+            }
+        }
+
+        function pushState(view, params = {})
+        {
+            try
+            {
+                const url = new URL(window.location);
+                url.searchParams.set('view', view);
+                Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
+                window.history.pushState({}, '', url);
+            } catch (e) { }
+        }
+
+        /* --- NAVIGATION --- */
+        function setScreen(name, updateHistory = true)
+        {
+            if (appState.screen !== name && appState.screen !== 'home')
+            {
+                if (name === 'home')
+                {
+                    window.location.href = window.location.pathname;
+                    return;
+                }
+            }
+
+            ['screen-home', 'screen-chapters', 'screen-reader'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            appState.screen = name;
+
+            const header = document.getElementById('mainHeader');
+            const dock = document.getElementById('glassDock');
+            const backBtn = document.getElementById('backBtn');
+            const title = document.getElementById('pageTitle');
+            const settingsBtn = document.getElementById('headerSettingsBtn');
+
+            if (name === 'home')
+            {
+                document.getElementById('screen-home').classList.remove('hidden');
+                title.innerText = 'NovelReader';
+                backBtn.classList.add('hidden');
+                settingsBtn.classList.add('hidden');
+                appState.book = null;
+                dock.classList.remove('hide');
+                if (updateHistory) pushState('home');
+                fetchBooks();
+            }
+            else if (name === 'chapters')
+            {
+                document.getElementById('screen-chapters').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                settingsBtn.classList.add('hidden');
+                title.innerText = appState.book?.name || 'Mục lục';
+                dock.classList.add('hide');
+            }
+            else if (name === 'reader')
+            {
+                document.getElementById('screen-reader').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                settingsBtn.classList.remove('hidden');
+                dock.classList.remove('hide');
+            }
+
+            updateDockState();
+            window.scrollTo(0, 0);
+        }
+
+        function handleBack()
+        {
+            if (appState.screen === 'reader')
+            {
+                if (appState.book && appState.book.id) fetchChapters(appState.book.id, appState.book.name);
+                else try { window.history.back(); } catch (e) { setScreen('home'); }
+            } else
+            {
+                setScreen('home');
+            }
+        }
+
+        function updateDockState()
+        {
+            const isReader = appState.screen === 'reader';
+            ['btnPrev', 'btnNext', 'btnReport'].forEach(id =>
+            {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('disabled', !isReader);
+            });
+        }
+
+        /* --- DATA FETCHING --- */
+        async function fetchBooks(page = 1, q = '')
+        {
+            const el = document.getElementById('bookList');
+            el.innerHTML = '<div style="text-align:center; padding:2rem; color:#888;">Đang tải...</div>';
+            const pageNum = parseInt(page) || 1;
+            const data = await api(`/api/books?page=${pageNum}&limit=1000&search=${encodeURIComponent(q)}`);
+
+            if (!data || !data.data.length) { el.innerHTML = '<div style="text-align:center; padding:2rem;">Không tìm thấy truyện.</div>'; return; }
+            if (data.pagination) data.pagination.currentPage = pageNum;
+            el.innerHTML = data.data.map(b => `
+                <a href="?view=chapters&bookId=${b.bookId}&bookName=${encodeURIComponent(b.bookName)}" target="_blank" style="display: block; text-decoration: none;">
+                    <div class="book-row">
+                        <div class="book-icon">${b.bookName.charAt(0)}</div>
+                        <div class="book-info">
+                            <div class="book-title">${b.bookName}</div>
+                            <div class="book-meta">
+                                <span class="tag"> Tổng: ${b.chapterCount || 0} - Đã dịch: ${b.totalTranslated || 0} - Chưa dịch: ${b.totalPending || 0}</span>
+                                <span style="padding: 0px 4px">   ${b.createdAt || 'Đang cập nhật'}  </span> 
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            `).join('');
+            renderPager('homePagination', data.pagination, (p) => fetchBooks(p, q));
+        }
+
+        async function fetchChapters(bid, bname, page = 1, updateHistory = true)
+        {
+            document.title = `${bname} - Mục lục`;
+            if (appState.screen === 'reader')
+            {
+                const url = new URL(window.location);
+                url.searchParams.set('view', 'chapters');
+                url.searchParams.set('bookId', bid);
+                url.searchParams.set('bookName', bname);
+                window.location.href = url.toString();
+                return;
+            }
+
+            appState.book = { id: bid, name: bname };
+            setScreen('chapters', false);
+            if (updateHistory) pushState('chapters', { bookId: bid, bookName: bname });
+
+            const el = document.getElementById('chapterList');
+            const batchBar = document.getElementById('batchActionBar');
+            const segAll = document.getElementById('seg-all');
+            const segPending = document.getElementById('seg-pending');
+
+            el.innerHTML = '<div style="padding:2rem; text-align:center;">Đang tải danh sách...</div>';
+
+            const pageNum = parseInt(page) || 1;
+
+            // Build Query Params for Server-Side Filtering & Sorting
+            let sortBy = 'chapterNumber';
+            let sortOrder = 'ASC';
+
+            if (appState.sortOption === 'num_desc') sortOrder = 'DESC';
+            else if (appState.sortOption === 'time_new') { sortBy = 'updatedAt'; sortOrder = 'DESC'; }
+            else if (appState.sortOption === 'time_old') { sortBy = 'updatedAt'; sortOrder = 'ASC'; }
+
+            let filterParam = '';
+
+            // Update UI State for Filter
+            if (appState.filterState === 'pending')
+            {
+                filterParam = '&state=PENDING';
+                batchBar.classList.remove('hidden');
+                segPending.classList.add('active', 'pending');
+                segAll.classList.remove('active');
+            } else
+            {
+                batchBar.classList.add('hidden');
+                segAll.classList.add('active');
+                segPending.classList.remove('active', 'pending');
+            }
+
+            const limit = 500; // Reduce limit for faster loading since we use server pagination
+            const url = `/api/books/${bid}/chapters?page=${pageNum}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}${filterParam}`;
+
+            const data = await api(url);
+
+            if (!data || !data.chapters.length)
+            {
+                el.innerHTML = '<div style="padding:2rem; text-align:center;">Không tìm thấy chương nào.</div>';
+                // Reset pagination if empty
+                renderPager('chapterPagination', { totalPages: 0, currentPage: 1 }, null);
+                renderPager('chapterPagination2', { totalPages: 0, currentPage: 1 }, null);
+                return;
+            }
+            if (data.pagination) data.pagination.currentPage = pageNum;
+
+            appState.currentChapterList = data.chapters;
+
+            // Render directly
+            el.innerHTML = data.chapters.map(c => renderChapterRow(c)).join('');
+
+            renderPager('chapterPagination', data.pagination, (p) => fetchChapters(bid, bname, p, false));
+            renderPager('chapterPagination2', data.pagination, (p) => fetchChapters(bid, bname, p, false));
+        }
+
+        // --- Filtering & Sorting Logic (Triggered by UI) ---
+        function applyFilters()
+        {
+            // Read Sort Option from Select
+            appState.sortOption = document.getElementById('sortOption').value;
+
+            // Reload Chapters
+            if (appState.book && appState.book.id)
+            {
+                fetchChapters(appState.book.id, appState.book.name, 1, false);
+            }
+        }
+
+        // New function to switch filter state from Segmented Control
+        function setFilterState(state)
+        {
+            if (appState.filterState === state) return; // No change
+            appState.filterState = state;
+            applyFilters();
+        }
+
+        // --- Render Row Helper ---
+        function renderChapterRow(c)
+        {
+            const isPending = c.state === 'PENDING';
+            return `
+                <div class="chapter-row ${isPending ? 'pending-row' : ''}" onclick="setupReader('${c.chapterId}')">
+                    <div>
+                        <div class="ch-title">${c.title}</div>
+                        <div class="ch-sub">
+                            <span>Chương ${c.chapterNumber}</span>
+                            ${isPending ? '<span class="badge-pending">CHỜ DỊCH</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="color:var(--accent); font-weight:bold;">›</div>
+                </div>
+            `;
+        }
+
+        // --- Handle Manage Pending Click ---
+        async function handleManagePending()
+        {
+            // 1. Open Translation Sheet
+            openSheet('translationSheet');
+
+            // 2. Switch to Batch Chapter Tab
+            switchTransTab('batch_chapter');
+
+            // 3. No need to load anything initially, user will choose
+        }
+
+        async function setupReader(cid, updateHistory = true)
+        {
+            if (appState.screen === 'chapters' && updateHistory)
+            {
+                const url = new URL(window.location);
+                url.searchParams.set('view', 'reader');
+                url.searchParams.set('chapterId', cid);
+                url.searchParams.set('bookId', appState.book?.id || '');
+                // url.searchParams.set('bookName', appState.book?.name || '');
+                window.location.href = url.toString();
+                return;
+            }
+
+
+            setScreen('reader', false);
+            if (updateHistory) pushState('reader', { chapterId: cid, bookId: appState.book?.id, bookName: appState.book?.name });
+
+            document.getElementById('readerContainer').innerHTML = '';
+            appState.isLoading = false;
+            await fetchAndRenderChapter(cid, true);
+            preloadMenu();
+        }
+
+        async function fetchAndRenderChapter(cid, isInitial = false, forceReload = false)
+        {
+            document.title = `${appState.book?.name}` || 'NovelReader';
+            if (forceReload)
+            {
+                const url = new URL(window.location);
+                url.searchParams.set('chapterId', cid);
+                window.location.href = url.toString();
+                return;
+            }
+
+            if (appState.isLoading) return;
+            appState.isLoading = true;
+            if (!isInitial) document.getElementById('loadingNext').classList.remove('hidden');
+
+            const data = await api(`/api/chapters/${cid}/?groupLines=${appState.settings.groupLines}&isEnabledReplace=${appState.settings.isEnabledReplaceToggle ?? false}`);
+            appState.isLoading = false;
+            document.getElementById('loadingNext').classList.add('hidden');
+
+            if (!data) return;
+
+            const div = document.createElement('div');
+            div.className = 'chapter-block fade-in';
+            div.id = `chap-${cid}`;
+            div.dataset.cid = cid;
+            div.dataset.num = data.chapter.chapterNumber;
+            div.dataset.bookName = data.chapter.bookName;
+
+            let content = data.chapter.content.filter(t => t.trim()).map(t => `${t}`).join('');
+
+            let header = isInitial ?
+                `<div aria-hidden="true" style="text-align:center; margin-bottom:1rem;">
+                    <h5 style="font-family:'Merriweather'; color:var(--accent); margin-bottom:0.2rem;">${data.chapter.title}</h5>
+                 </div>` :
+                `<div class="chapter-header-compact">Chương ${data.chapter.chapterNumber}: ${data.chapter.title}</div>`;
+
+            div.innerHTML = header + `<div class="reader-text">${content}</div>`;
+            document.getElementById('readerContainer').appendChild(div);
+
+            if (isInitial)
+            {
+                appState.activeChapterId = cid;
+                appState.chapterName = data.chapter.title;
+                appState.prevChapterId = data.navigation?.prev?.chapterId;
+                updateHeader(data.chapter);
+                restoreReadProgress(cid);
+            }
+            appState.nextChapterId = data.navigation?.next?.chapterId;
+            observer.observe(div);
+        }
+
+        function restoreReadProgress(cid)
+        {
+            try
+            {
+                const progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}');
+                const savedOffset = progress[cid];
+                if (typeof savedOffset === 'number' && savedOffset > 0)
+                {
+                    const el = document.getElementById(`chap-${cid}`);
+                    if (el) setTimeout(() => { window.scrollTo({ top: el.offsetTop + savedOffset, behavior: 'auto' }); }, 100);
+                } else
+                {
+                    window.scrollTo(0, 0);
+                }
+            } catch (e) { window.scrollTo(0, 0); }
+        }
+
+        /* --- UI LOGIC --- */
+        function onScroll()
+        {
+            const y = window.scrollY;
+            if (appState.screen === 'reader')
+            {
+                const totalH = document.documentElement.scrollHeight - window.innerHeight;
+                document.getElementById('readProgress').style.width = (totalH > 0 ? (y / totalH) * 100 : 0) + '%';
+                const scrollingDown = y > appState.scrollPos;
+                const hideUI = scrollingDown && y > 100;
+
+                document.getElementById('glassDock').classList.toggle('hide', hideUI);
+                document.getElementById('mainHeader').classList.toggle('hide', hideUI);
+
+                if (appState.settings.lazyLoad && !appState.isLoading && appState.nextChapterId && (totalH - y < 1500))
+                {
+                    fetchAndRenderChapter(appState.nextChapterId);
+                }
+
+                if (appState.activeChapterId)
+                {
+                    const el = document.getElementById(`chap-${appState.activeChapterId}`);
+                    if (el) saveReadProgress(appState.activeChapterId, y - el.offsetTop);
+                }
+            } else
+            {
+                document.getElementById('readProgress').style.width = '0';
+            }
+            appState.scrollPos = y;
+        }
+
+        function handleIntersect(entries)
+        {
+            entries.forEach(entry =>
+            {
+                if (entry.isIntersecting)
+                {
+                    const div = entry.target;
+                    if (appState.activeChapterId !== div.dataset.cid)
+                    {
+                        appState.activeChapterId = div.dataset.cid;
+                        updateHeader({ bookName: div.dataset.bookName, chapterNumber: div.dataset.num });
+                        highlightActiveChapter();
+                        try { const url = new URL(window.location); url.searchParams.set('chapterId', div.dataset.cid); window.history.replaceState({}, '', url); } catch (e) { }
+
+                        const container = document.getElementById('readerContainer');
+                        if (container.children.length > 5)
+                        {
+                            observer.unobserve(container.children[0]);
+                            container.children[0].remove();
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHeader(data)
+        {
+            document.getElementById('pageTitle').innerText = `C${data.chapterNumber} - ${data.bookName}`;
+            if (appState.book)
+            {
+                let hist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                hist = hist.filter(h => h.bid !== appState.book.id);
+                hist.unshift({ bid: appState.book.id, bname: appState.book.name, cid: appState.activeChapterId, cnum: data.chapterNumber, scrollPos: 0 });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(hist.slice(0, 20)));
+            }
+        }
+
+        function showToast(msg)
+        {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        /* --- SPELL CHECK / SELECTION --- */
+        function handleTextSelection()
+        {
+            if (appState.screen !== 'reader') return;
+            const sel = window.getSelection();
+            const tip = document.getElementById('selectionTooltip');
+            if (sel.rangeCount > 0 && !sel.isCollapsed)
+            {
+                document.querySelector('#glassDock').classList.remove('hide')
+            }
+            tip.classList.add('hidden');
+        }
+
+        function handleReportClick()
+        {
+            // Now opens Edit Word Sheet directly (repurposed)
+            openEditWordSheet();
+        }
+
+        // --- NEW: EDIT WORD SHEET LOGIC ---
+        function openEditWordSheet()
+        {
+            // Pre-fill input if text selected
+            const sel = window.getSelection();
+            const text = sel.rangeCount > 0 ? sel.toString().trim() : '';
+            if (text)
+            {
+                document.getElementById('wordOriginal').value = text;
+            }
+
+            // Clear edit state
+            appState.editingWordId = null;
+            document.getElementById('wordReplace').value = '';
+
+            openSheet('editWordSheet');
+            isEnabledReplaceToggle = appState.settings.isEnabledReplaceToggle ?? false;
+            document.getElementById('wordReplaceToggle').checked = isEnabledReplaceToggle;
+        
+            loadWordList({ scope: null, search: null  });
+        }
+
+        function selectWordScope(scope)
+        {
+            document.querySelectorAll('#wordScopeControl .segment-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`scope-${scope}`).classList.add('active');
+            document.getElementById('selectedWordScope').value = scope;
+        }
+
+        function filterWordList()
+        {
+            const filter = document.getElementById('wordFilterSelect').value;
+            loadWordList({ scope: filter, search: null });
+        }
+
+        let debounceTimer;
+        function searchWordList()
+        {
+            const query = document.getElementById('wordSearchInput').value.trim().toLowerCase();
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() =>
+            {
+                loadWordList({ search: query });
+            }, 500);
+        }   
+
+        function toggleWordReplacement(checkbox)
+        {   
+            appState.settings.isEnabledReplaceToggle = checkbox;
+            saveSettings();
+            closeAllDrawers()
+            setupReader(appState.activeChapterId, true);
+            restoreReadProgress(appState.activeChapterId);
+           
+        }
+
+        async function loadWordList({ scope, search } = {})
+        {   
+            const container = document.getElementById('wordListContainer');
+            const bid = appState.book?.id;
+            const cid = appState.activeChapterId;
+
+            if (!bid) { container.innerHTML = '<div style="padding:15px;text-align:center;color:#888;">Chưa mở truyện</div>'; return; }
+
+            // Assuming API endpoint pattern
+            try
+            {
+                let query = `/api/replacements?bookId=${bid}`;
+                if (cid) query += `&chapterId=${cid}`;
+                if (scope) query += `&scope=${scope}`;
+                if (search) query += `&search=${encodeURIComponent(search)}`;
+
+                const data = await api(query);
+                if (data && Array.isArray(data))
+                {
+                    renderWordList(data);
+                } else
+                {
+                    container.innerHTML = '<div style="padding:15px;text-align:center;color:#888;">Chưa có từ thay thế nào.</div>';
+                }
+            } catch (e)
+            {
+                container.innerHTML = '<div style="padding:15px;text-align:center;color:#d63031;">Lỗi tải dữ liệu.</div>';
+            }
+        }
+
+
+
+
+
+        function renderWordList(words)
+        {
+            const container = document.getElementById('wordListContainer');
+            if (words.length === 0)
+            {
+                container.innerHTML = '<div style="padding:15px;text-align:center;color:#888;">Chưa có từ thay thế nào.</div>';
+                return;
+            }
+
+            container.innerHTML = words.map(w => `
+                <div class="word-item" onclick="editWordItem('${w.id}', '${w.original}', '${w.replacement}', '${w.scope}')">
+                    <div class="word-content">
+                        <span class="word-orig">${w.original}</span>
+                        <span class="word-replace">${w.replacement}</span>
+                    </div>
+
+                    <span style="padding: 2px 10px; border-radius: 4px; border-left: 1px solid var(--accent); margin-right: 10px;">${w.scope.slice(0, 1).toUpperCase()}</span>
+
+                    <div class="word-actions">
+                        <button class="icon-action delete" onclick="event.stopPropagation(); deleteWordReplacement('${w.id}')">✕</button>
+                    </div>
+                </div>
+                <hr style="margin:0; border:none; border-bottom:1px solid #eee;">
+            `).join('');
+        }
+
+        function editWordItem(id, orig, rep, scope)
+        {
+            appState.editingWordId = id;
+            document.getElementById('wordOriginal').value = orig;
+            document.getElementById('wordReplace').value = rep;
+            // Map scope if needed, default to what comes back or fallback
+            const validScopes = ['chapter', 'book', 'global'];
+            const safeScope = validScopes.includes(scope) ? scope : 'book';
+            selectWordScope(safeScope);
+        }
+
+        async function saveWordReplacement()
+        {
+            const original = document.getElementById('wordOriginal').value.trim();
+            const replacement = document.getElementById('wordReplace').value.trim();
+            const scope = document.getElementById('selectedWordScope').value;
+            const bid = appState.book?.id;
+            const cid = appState.activeChapterId;
+
+
+            if (!original || !replacement) { showToast("Vui lòng nhập đủ thông tin"); return; }
+            if (!bid) { showToast("Lỗi: Không xác định được truyện"); return; }
+
+            const payload = {
+                original,
+                replacement,
+                scope,
+                bookId: bid,
+                chapterId: cid,
+                id: appState.editingWordId // If editing
+            };
+
+            // Call API
+            try
+            {
+                // If ID exists -> Update, else Create
+                const url = appState.editingWordId ? `/api/replacements/${appState.editingWordId}` : `/api/replacements`;
+                const method = appState.editingWordId ? 'PUT' : 'POST';
+
+                await fetch(API_BASE + url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                    body: JSON.stringify(payload)
+                });
+
+                showToast(appState.editingWordId ? "Đã cập nhật" : "Đã thêm từ mới");
+
+                // Clear and Reload
+                document.getElementById('wordOriginal').value = '';
+                document.getElementById('wordReplace').value = '';
+                appState.editingWordId = null;
+                loadWordList({ scope: null, search: null });
+                setupReader(cid, false);
+                restoreReadProgress(cid);
+            } catch (e)
+            {
+                showToast("Lỗi khi lưu");
+            }
+        }
+
+        async function deleteWordReplacement(id)
+        {
+            if (!confirm("Xóa từ thay thế này?")) return;
+            try
+            {
+                await fetch(`${API_BASE}/api/replacements/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                showToast("Đã xóa");
+                loadWordList({ scope: null, search: null });
+                fetchAndRenderChapter(appState.activeChapterId, false, true);
+                restoreReadProgress(appState.activeChapterId);
+            } catch (e)
+            {
+                showToast("Lỗi khi xóa");
+            }
+        }
+
+        /* --- TRANSLATION LOGIC (UPDATED) --- */
+        function handleTranslate()
+        {
+            openSheet('translationSheet');
+            // Default to 'current' if a book is open, else 'story'
+            if (appState.book?.id)
+            {
+                switchTransTab('current');
+            } else
+            {
+                switchTransTab('story');
+            }
+        }
+
+        function switchTransTab(tab)
+        {
+            appState.activeTranslateTab = tab;
+            document.getElementById('tabBtnCurrent').classList.toggle('active', tab === 'current');
+            document.getElementById('tabBtnBatchChapter').classList.toggle('active', tab === 'batch_chapter');
+            document.getElementById('tabBtnStory').classList.toggle('active', tab === 'story');
+
+            document.getElementById('tabContentCurrent').classList.toggle('hidden', tab !== 'current');
+            document.getElementById('tabContentBatchChapter').classList.toggle('hidden', tab !== 'batch_chapter');
+            document.getElementById('tabContentStory').classList.toggle('hidden', tab !== 'story');
+
+            // Update main button text
+            const btn = document.getElementById('btnSubmitTransSheet');
+            btn.innerText = tab === 'current' ? "Dịch ngay" : "Tiếp tục";
+
+            if (tab === 'batch_chapter')
+            {
+                // Auto load if empty or if book changed
+                if (!appState.currentBookChaptersCache || appState.currentBookChaptersCache.bid !== appState.book.id)
+                {
+                    loadBatchChapters();
+                }
+            }
+            else if (tab === 'story')
+            {
+                loadTranslationBooks();
+            }
+            else if (tab === 'current' && appState?.activeChapterId)
+            {
+                // No loading needed
+                document.getElementById('tabContentCurrentText').innerText = appState.chapterName || 'Chương hiện tại';
+            }
+
+
+        }
+
+        async function loadTranslationBooks()
+        {
+            const listEl = document.getElementById('transBookList');
+            if (appState.allBooksCache)
+            {
+                renderTranslationBooks(appState.allBooksCache);
+                return;
+            }
+            const data = await api(`/api/books?page=1&limit=1000`);
+            if (data && data.data)
+            {
+                appState.allBooksCache = data.data;
+                renderTranslationBooks(data.data);
+            } else
+            {
+                listEl.innerHTML = '<div style="padding:10px;color:#d63031;">Không tải được danh sách truyện</div>';
+            }
+        }
+
+        function renderTranslationBooks(books)
+        {
+            const listEl = document.getElementById('transBookList');
+            if (books.length === 0)
+            {
+                listEl.innerHTML = '<div style="padding:10px;color:#888;">Không tìm thấy truyện</div>';
+                return;
+            }
+            listEl.innerHTML = books.map(b => `
+                <label class="book-checkbox-item">
+                    <input type="checkbox" value="${b.bookId}" data-name="${b.bookName}" name="transBooks">
+                    <span class="book-checkbox-name" title="${b.bookName}">${b.bookName}</span>
+                </label>
+            `).join('');
+        }
+
+        function filterTranslationBooks(query)
+        {
+            if (!appState.allBooksCache) return;
+            const q = query.toLowerCase();
+            const filtered = appState.allBooksCache.filter(b => b.bookName.toLowerCase().includes(q));
+            renderTranslationBooks(filtered);
+        }
+
+        // New functions for Chapters Tab
+        async function loadTranslationChapters()
+        {
+            // Only used if needed, currently batch loading is manual
+            const listEl = document.getElementById('transChapterList');
+            const bid = appState.book.id;
+
+            if (appState.currentBookChaptersCache && appState.currentBookChaptersCache.bid !== bid)
+            {
+                appState.currentBookChaptersCache = null;
+            }
+
+            if (appState.currentBookChaptersCache)
+            {
+                renderTranslationChapters(appState.currentBookChaptersCache.chapters);
+                return;
+            }
+
+            const data = await api(`/api/books/${bid}/chapters?page=1&limit=10000`);
+            if (data && data.chapters)
+            {
+                appState.currentBookChaptersCache = { bid: bid, chapters: data.chapters };
+                renderTranslationChapters(data.chapters);
+            } else
+            {
+                listEl.innerHTML = '<div style="padding:10px;color:#d63031;">Không tải được danh sách chương</div>';
+            }
+        }
+
+        function renderTranslationChapters(chapters)
+        {
+            const listEl = document.getElementById('transChapterList');
+            const activeCid = appState.activeChapterId;
+
+            if (chapters.length === 0)
+            {
+                listEl.innerHTML = '<div style="padding:10px;color:#888;">Chưa có chương nào</div>';
+                return;
+            }
+
+            listEl.innerHTML = chapters.map(c =>
+            {
+                const isPending = c.state === 'PENDING';
+                return `
+                <label class="book-checkbox-item">
+                    <input type="checkbox" value="${c.chapterId}" 
+                           data-name="Chương ${c.chapterNumber}" 
+                           ${c.chapterId === activeCid ? 'checked' : ''} 
+                           name="transChapters" 
+                           data-idx="${c.chapterNumber}"
+                           data-state="${c.state || 'SUCCEEDED'}">
+                    <span class="book-checkbox-name" title="${c.title}">Chương ${c.chapterNumber}: ${c.title}</span>
+                    ${isPending ? '<span class="badge-pending-list">Pending</span>' : ''}
+                </label>
+            `}).join('');
+        }
+
+        function filterTranslationChapters(query)
+        {
+            if (!appState.currentBookChaptersCache) return;
+            const q = query.toLowerCase();
+            const filtered = appState.currentBookChaptersCache.chapters.filter(c =>
+                c.title.toLowerCase().includes(q) || c.chapterNumber.toString().includes(q)
+            );
+            renderTranslationChapters(filtered);
+        }
+
+        // --- BATCH LOAD LOGIC (NEW) ---
+        async function loadBatchChapters()
+        {
+            const listEl = document.getElementById('transChapterList');
+            const bid = appState.book?.id;
+            if (!bid) { showToast("Vui lòng mở một truyện trước."); return; }
+
+            const mode = document.getElementById('batchLoadMode').value;
+            const limit = document.getElementById('batchLoadLimit').value || 50;
+
+            listEl.innerHTML = '<div style="padding:10px;color:#888;text-align:center;">Đang tải dữ liệu...</div>';
+
+            let url = `/api/books/${bid}/chapters?limit=${limit}`;
+            if (mode === 'pending')
+            {
+                url += '&state=PENDING';
+            } else
+            {
+                // For 'all', sort by chapter number ascending by default
+                url += '&sortBy=chapterNumber&sortOrder=ASC';
+            }
+
+            try
+            {
+                const data = await api(url);
+                if (data && data.chapters)
+                {
+                    appState.currentBookChaptersCache = { bid: bid, chapters: data.chapters };
+                    renderTranslationChapters(data.chapters);
+                    if (data.chapters.length === 0)
+                    {
+                        listEl.innerHTML = '<div style="padding:10px;color:#888;text-align:center;">Không tìm thấy chương nào phù hợp.</div>';
+                    } else
+                    {
+                        // Auto-select helps user
+                        toggleBatchSelection(true);
+                    }
+                } else
+                {
+                    listEl.innerHTML = '<div style="padding:10px;color:#d63031;text-align:center;">Lỗi tải dữ liệu.</div>';
+                }
+            } catch (e)
+            {
+                listEl.innerHTML = '<div style="padding:10px;color:#d63031;text-align:center;">Lỗi kết nối.</div>';
+            }
+        }
+
+        function toggleBatchSelection(state)
+        {
+            const checkboxes = document.querySelectorAll('#transChapterList input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = state);
+        }
+
+        function selectBatchRange()
+        {
+            const start = parseInt(prompt("Từ chương số:", "1"));
+            const end = parseInt(prompt("Đến chương số:", ""));
+
+            if (!isNaN(start) && !isNaN(end) && start <= end)
+            {
+                const checkboxes = document.querySelectorAll('#transChapterList input[type="checkbox"]');
+                let count = 0;
+                checkboxes.forEach(cb =>
+                {
+                    const idx = parseInt(cb.getAttribute('data-idx'));
+                    if (idx >= start && idx <= end)
+                    {
+                        cb.checked = true;
+                        count++;
+                    }
+                });
+                showToast(`Đã chọn ${count} chương`);
+            }
+        }
+
+        // --- CACHE LOGIC ---
+        function loadTranslationOptions()
+        {
+            try
+            {
+                const opts = JSON.parse(localStorage.getItem(TRANS_OPTIONS_KEY));
+                if (opts)
+                {
+                    if (opts.model) document.getElementById('aiModelSelect').value = opts.model;
+                    if (opts.minWords) document.getElementById('transMinWords').value = opts.minWords;
+                    if (opts.maxWords) document.getElementById('transMaxWords').value = opts.maxWords;
+                    if (opts.temperature) document.getElementById('transTemperature').value = opts.temperature;
+                    if (opts.scope !== undefined) document.getElementById('transScopeToggle').checked = opts.scope;
+                }
+            } catch (e) { console.error('Load opts error', e); }
+        }
+
+        function saveTranslationOptions()
+        {
+            const opts = {
+                model: document.getElementById('aiModelSelect').value,
+                minWords: document.getElementById('transMinWords').value,
+                maxWords: document.getElementById('transMaxWords').value,
+                temperature: document.getElementById('transTemperature').value,
+                scope: document.getElementById('transScopeToggle').checked
+            };
+            localStorage.setItem(TRANS_OPTIONS_KEY, JSON.stringify(opts));
+        }
+
+        async function submitTranslation()
+        {
+            saveTranslationOptions(); // Save options before submitting
+
+            // Gather common data
+            const model = document.getElementById('aiModelSelect').value;
+            const minW = parseInt(document.getElementById('transMinWords').value) || 100;
+            const maxW = parseInt(document.getElementById('transMaxWords').value) || 500;
+            const temperature = parseFloat(document.getElementById('transTemperature').value) || 0;
+            const isFullScope = document.getElementById('transScopeToggle').checked;
+            const mode = appState.activeTranslateTab;
+
+            // --- Case 1: Current Chapter (Instant) ---
+            if (mode === 'current')
+            {
+                if (!appState.activeChapterId) { showToast("Chưa mở chương nào"); return; }
+
+                const btn = document.getElementById('btnSubmitTransSheet');
+                const originalText = btn.innerText;
+                btn.innerText = "Đang xử lý...";
+                btn.disabled = true;
+
+                try
+                {
+                    const payload = {
+                        temperature,
+                        model, minWords: minW, maxWords: maxW, retryTranslate: isFullScope,
+                        mode: 'current',
+                        bookId: appState.book.id,
+                        chapterId: [appState.activeChapterId],
+                    };
+
+                    const result = await fetch(`${API_BASE}/stories/gemini-ai/translate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                        body: JSON.stringify(payload)
+                    }).then(res => res.json());
+                    if (result[appState.activeChapterId]?.chapter?.state !== 'SUCCEEDED')
+                    {
+                        throw new Error("Yêu cầu dịch lại đã thất bại.");
+                    }
+
+
+                    showToast("Dịch thành công:  " + result[appState.activeChapterId]?.chapter?.totalTokens + " tokens");
+                    closeAllDrawers();
+                    setupReader(appState.activeChapterId, false); // Reload content
+                    // fetchAndRenderChapter(appState.activeChapterId, false, true); // Force reload
+                } catch (e)
+                {
+                    showToast("Lỗi: " + e.message);
+                    closeAllDrawers();
+                } finally
+                {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+                return;
+            }
+
+            // --- Case 2 & 3: Batch Modes (Require Confirmation) ---
+            let selectedIds = [];
+            let selectedNames = [];
+            let countLabel = "";
+
+            if (mode === 'story')
+            {
+                const checkboxes = document.querySelectorAll('input[name="transBooks"]:checked');
+                checkboxes.forEach(cb =>
+                {
+                    selectedIds.push(cb.value);
+                    selectedNames.push(cb.getAttribute('data-name'));
+                });
+                if (selectedIds.length === 0) { showToast("Vui lòng chọn ít nhất 1 truyện"); return; }
+                countLabel = selectedIds.length + " truyện";
+            }
+            else // batch_chapter
+            {
+                if (!appState.book?.id) { showToast("Vui lòng mở truyện trước"); return; }
+                const checkboxes = document.querySelectorAll('input[name="transChapters"]:checked');
+                checkboxes.forEach(cb =>
+                {
+                    selectedIds.push(cb.value);
+                    selectedNames.push(cb.getAttribute('data-name'));
+                });
+                if (selectedIds.length === 0) { showToast("Vui lòng chọn ít nhất 1 chương"); return; }
+                countLabel = selectedIds.length + " chương";
+            }
+
+            // Prepare Payload for Confirmation
+            appState.pendingTranslation = {
+                mode: mode,
+                model: model,
+                minWords: minW,
+                maxWords: maxW,
+                retryTranslate: isFullScope,
+                ids: selectedIds,
+                names: selectedNames, // For display only
+                activeBookId: appState.book?.id,
+                temperature: temperature
+            };
+
+            // Show Confirmation
+            document.getElementById('confMode').innerText = mode === 'batch_chapter' ? "Dịch Chương (Batch)" : "Dịch Truyện (Batch)";
+            document.getElementById('confModel').innerText = model;
+            document.getElementById('confScope').innerText = isFullScope ? "Dịch lại toàn bộ" : "Chỉ dịch phần lỗi/thiếu";
+            document.getElementById('confBatch').innerText = `${minW} - ${maxW} từ`;
+            document.getElementById('confCount').innerText = countLabel;
+
+            // Populate List
+            const listEl = document.getElementById('confList');
+            listEl.innerHTML = selectedNames.map(n => `<div class="confirm-list-item">${n}</div>`).join('');
+
+            closeAllDrawers(); // Close sheet
+            document.getElementById('confirmModal').classList.add('show');
+        }
+
+        function closeConfirmModal()
+        {
+            document.getElementById('confirmModal').classList.remove('show');
+            appState.pendingTranslation = null;
+        }
+
+        async function confirmTranslation()
+        {
+            const p = appState.pendingTranslation;
+            if (!p) return;
+
+            const btn = document.getElementById('btnRealSubmit');
+            btn.innerText = "Đang gửi...";
+            btn.style.opacity = "0.7";
+
+            try
+            {
+                let payload = {
+                    model: p.model,
+                    minWords: p.minWords,
+                    maxWords: p.maxWords,
+                    retryTranslate: p.retryTranslate,
+                    mode: p.mode,
+                    currentChapterId: appState.activeChapterId
+                };
+
+                if (p.mode === 'batch_chapter')
+                {
+                    payload.bookId = p.activeBookId;
+                    payload.chapterId = p.ids;
+                } else
+                {
+                    payload.bookId = p.ids;
+                }
+
+                const result = await fetch(`${API_BASE}/stories/gemini-ai/translate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                    body: JSON.stringify(payload)
+                });
+
+                showToast("Đã gửi yêu cầu dịch thành công!");
+
+                // Refresh current chapter if it was in the batch
+                // if (p.mode === 'batch_chapter' && appState.activeChapterId && p.ids.includes(appState.activeChapterId))
+                // {
+                //     setTimeout(() => setupReader(appState.activeChapterId, false), 2000);
+                // }
+
+            } catch (e)
+            {
+                console.error(e);
+                showToast("Có lỗi khi gửi yêu cầu");
+            } finally
+            {
+                btn.innerText = "Đồng ý";
+                btn.style.opacity = "1";
+                closeConfirmModal();
+            }
+        }
+
+
+        function openReportSheet()
+        {
+            const text = window.getSelection().toString().trim() ?? '';
+            document.getElementById('originalText').value = text;
+            document.getElementById('newText').value = text;
+            document.getElementById('selectionTooltip').classList.add('hidden');
+            openSheet('reportSheet');
+        }
+
+        function selectErrorType(el, type)
+        {
+            document.querySelectorAll('.chip-group .chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            appState.errorType = type;
+        }
+
+        async function submitReport()
+        {
+            const o = document.getElementById('originalText').value;
+            const n = document.getElementById('newText').value;
+            const type = appState.errorType;
+            const bid = appState.book?.id;
+
+            if (!bid) { showToast("Không tìm thấy ID sách"); return; }
+            const btn = document.querySelector('#reportSheet .btn-primary');
+
+            try
+            {
+                btn.innerText = "Đang gửi...";
+                const result = await fetch(`${API_BASE}/api/book/update/${bid}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                    body: JSON.stringify({ originalText: o, newText: n, chapterId: appState.activeChapterId, errorType: type })
+                }).then(res => res.json());
+                showToast(result.message || "Báo cáo đã được gửi");
+                setupReader(appState.activeChapterId, false);
+            } catch (e) { showToast("Lỗi khi gửi báo cáo"); }
+            finally
+            {
+                btn.innerText = "Gửi báo cáo";
+                closeAllDrawers();
+                window.getSelection().removeAllRanges();
+            }
+        }
+
+        /* --- DRAWER / SHEET LOGIC --- */
+        function toggleDrawer(name)
+        {
+            if (name === 'menu')
+            {
+                preloadMenu();
+                openSheet('menuDrawer');
+            } else if (name === 'history')
+            {
+                renderHistory();
+                openSheet('historyDrawer');
+            } else if (name === 'settings')
+            {
+                openSheet('settingsSheet');
+            }
+        }
+
+        function openSheet(id)
+        {
+            document.querySelectorAll('.bottom-sheet.show, .side-drawer.show').forEach(el =>
+            {
+                if (el.id !== id) el.classList.remove('show');
+            });
+            document.getElementById('sheetOverlay').classList.add('show');
+            document.getElementById(id).classList.add('show');
+        }
+
+        function closeAllDrawers()
+        {
+            document.getElementById('sheetOverlay').classList.remove('show');
+            document.querySelectorAll('.bottom-sheet, .side-drawer').forEach(el => el.classList.remove('show'));
+        }
+
+        /* --- SETTINGS & HELPERS --- */
+        function loadSettings()
+        {
+            try
+            {
+                const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+                if (s) appState.settings = { ...appState.settings, ...s };
+            } catch { }
+            applySettings();
+        }
+
+        function applySettings()
+        {
+            const r = document.documentElement;
+            r.style.setProperty('--reader-font-size', (appState.settings.fontSize / 16) + 'rem');
+            r.style.setProperty('--reader-font-family', appState.settings.fontFamily);
+            r.style.setProperty('--reader-word-spacing', appState.settings.wordSpacing + 'px');
+
+            document.getElementById('fontSizeDisplay').innerText = appState.settings.fontSize;
+            document.getElementById('wordSpacingDisplay').innerText = appState.settings.wordSpacing;
+            document.getElementById('sentenceCountDisplay').innerText = appState.settings.groupLines;
+
+
+            const tog = document.getElementById('lazyToggleCircle');
+            if (tog) tog.style.left = appState.settings.lazyLoad ? '22px' : '2px';
+            document.querySelectorAll('[data-font]').forEach(el =>
+            {
+                if (el.dataset.font === appState.settings.fontFamily) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+        }
+
+        function saveSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(appState.settings)); applySettings(); }
+        function changeFontSize(d) { let s = appState.settings.fontSize + d; if (s < 14) s = 14; if (s > 28) s = 28; appState.settings.fontSize = s; saveSettings(); }
+        function changeWordSpacing(d) { let s = appState.settings.wordSpacing + d; if (s < 0) s = 0; if (s > 10) s = 10; appState.settings.wordSpacing = s; document.documentElement.style.setProperty('--reader-word-spacing', s + 'px'); saveSettings(); }
+        function changeSentenceCount(d) { let s = (appState.settings.groupLines ?? 1) + d; if (s < 1) s = 1; if (s > 10) s = 10; appState.settings.groupLines = s; saveSettings(); setupReader(appState.activeChapterId, false); }
+        function changeFont(el) { appState.settings.fontFamily = el.dataset.font; saveSettings(); }
+        function toggleLazyLoad(el) { appState.settings.lazyLoad = !appState.settings.lazyLoad; saveSettings(); }
+
+        /* --- MENU & PAGINATION --- */
+        async function preloadMenu()
+        {
+            const el = document.getElementById('menuBody');
+            if (!appState.book) return;
+            if (el.getAttribute('data-bid') === appState.book.id) return highlightActiveChapter();
+            el.innerHTML = '<div style="padding:2rem;text-align:center;color:#888;">Đang tải...</div>';
+            const data = await api(`/api/books/${appState.book.id}/chapters?page=1&limit=50000`);
+            if (data)
+            {
+                el.setAttribute('data-bid', appState.book.id);
+                el.innerHTML = data.chapters.map(c =>
+                    `<div class="drawer-item" id="menu-ch-${c.chapterId}" aria-hidden="true" onclick="closeAllDrawers(); setupReader('${c.chapterId}')">
+                        <div aria-hidden="true" style="font-weight:600; font-size:0.9rem;">Chương ${c.chapterNumber}</div>
+                        <div aria-hidden="true" style="font-size:0.85rem; color:#888;">${c.title}</div>
+                    </div>`
+                ).join('');
+            }
+            highlightActiveChapter();
+        }
+
+        function highlightActiveChapter()
+        {
+            if (!appState.activeChapterId) return;
+            document.querySelectorAll('.drawer-item.active').forEach(e => e.classList.remove('active'));
+            const el = document.getElementById(`menu-ch-${appState.activeChapterId}`);
+            if (el) { el.classList.add('active'); setTimeout(() => el.scrollIntoView({ block: 'center' }), 300); }
+        }
+
+        function renderHistory()
+        {
+            const el = document.getElementById('historyBody');
+            const hist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            el.innerHTML = hist.length ? hist.map(h =>
+                `<div class="drawer-item" aria-hidden="true" onclick="closeAllDrawers(); appState.book={id:'${h.bid}',name:'${h.bname}'}; setupReader('${h.cid}')">
+                    <div aria-hidden="true" style="font-weight:700; font-size:0.9rem; color:white;">${h.bname}</div>
+                    <div aria-hidden="true" style="font-size:0.85rem; color:var(--accent);">Đọc tiếp Chương ${h.cnum}</div>
+                </div>`
+            ).join('') : '<div style="padding:2rem;text-align:center;color:#888;">Chưa có lịch sử.</div>';
+        }
+
+        function clearHistory()
+        {
+            if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử đọc?'))
+            {
+                localStorage.removeItem(STORAGE_KEY);
+                renderHistory();
+                showToast('Đã xóa lịch sử');
+            }
+        }
+
+        function renderPager(id, pg, cb)
+        {
+            const el = document.getElementById(id);
+            if (!pg || pg.totalPages <= 1) { el.innerHTML = ''; return; }
+            const c = pg.currentPage || 1;
+            const cbName = `pager_cb_${id}`;
+            window[cbName] = cb;
+            const btnStyle = "width:36px; height:36px; border-radius:8px; background:#1e293b; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer;";
+            el.innerHTML = `
+                ${c > 1 ? `<div aria-hidden="true" style="${btnStyle}" onclick="window['${cbName}'](${c - 1})">←</div>` : ''}
+                <div aria-hidden="true" style="padding:0 10px; line-height:36px; color:#888; font-size:0.9rem;">Trang ${c}/${pg.totalPages}</div>
+                ${c < pg.totalPages ? `<div aria-hidden="true" style="${btnStyle}" onclick="window['${cbName}'](${c + 1})">→</div>` : ''}
+            `;
+        }
+
+        function navManual(dir)
+        {
+            if (dir === 'prev' && appState.prevChapterId) fetchAndRenderChapter(appState.prevChapterId, false, true);
+            else if (dir === 'next' && appState.nextChapterId)
+            {
+                const el = document.getElementById(`chap-${appState.nextChapterId}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                else fetchAndRenderChapter(appState.nextChapterId, false, true);
+            }
+        }
+
+        async function api(path)
+        {
+            try
+            {
+                let res = await fetch(API_BASE + path, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                if (!res.ok) throw new Error('Err');
+                return await res.json();
+            } catch { return null; }
+        }
+
+    </script>
+</body>
+
+</html>
