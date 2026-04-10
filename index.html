@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1121">
+    <title>Đọc Truyện Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Playfair+Display:wght@700&family=Quicksand:wght@500;600;700&family=Patrick+Hand&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+</head>
+
+<body>
+
+    <!-- Progress Bar -->
+    <div id="readProgress"
+        style="position: fixed; top: 0; left:0; height:3px; background:var(--accent); width:0%; z-index: 1100; transition: width 0.1s;"
+        aria-hidden="true"></div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" aria-hidden="true">Nội dung thông báo</div>
+
+    <!-- Header -->
+    <header class="header" id="mainHeader" aria-hidden="true">
+        <div class="header-inner">
+            <div style="display:flex; align-items:center; flex:1; min-width:0;">
+
+                <button class="icon-btn hidden" id="backBtn" onclick="handleBack()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <button class="dock-btn" onclick="setScreen('home')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                </button>
+                <div class="brand" id="pageTitle" onclick="window.scrollTo({top:0, behavior:'smooth'})">NovelReader
+                </div>
+            </div>
+
+            <button class="dock-btn" onclick="handleTranslate()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                    stroke-linejoin="round" width="20" height="20">
+                    <!-- left stylized 'A' card -->
+                    <rect x="2" y="3.5" width="8" height="13" rx="1" />
+                    <path d="M4.2 11h3" />
+                    <path d="M3.2 14.2L5.2 8.6L7.2 14.2" />
+
+                    <!-- right '文'-like card -->
+                    <rect x="14" y="3.5" width="8" height="13" rx="1" />
+                    <path d="M16.5 8.5h4" />
+                    <path d="M16.5 11.5h4" />
+                    <path d="M16.5 14.5h4" />
+
+                    <!-- two small curved arrows between them -->
+                    <path d="M11 9.5c0.8-1 2-1.7 3.3-1.9" />
+                    <polyline points="14.8 7.3 15.6 6 13.6 6.4" />
+                    <path d="M13.5 16.5c-0.9 1-2.1 1.7-3.4 1.9" />
+                    <polyline points="9.8 18.7 9 20 11 19.6" />
+                </svg>
+            </button>
+            <!-- Header Actions: History & Settings (moved up) -->
+            <div class="header-actions">
+                <button class="icon-btn small hidden" id="headerSettingsBtn" onclick="toggleDrawer('settings')">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"><text x="50%" y="55%" dominant-baseline="middle"
+                            text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">Aa</text></svg>
+                </button>
+                <button class="icon-btn small" onclick="toggleDrawer('history')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <!-- HOME -->
+        <div id="screen-home" aria-hidden="true">
+            <div class="search-area" aria-hidden="true">
+                <div style="position:relative; max-width:800px; margin:0 auto;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Tìm kiếm truyện...">
+                </div>
+            </div>
+            <div class="container" aria-hidden="true">
+                <div class="book-list" id="bookList"></div>
+                <div class="pagination" id="homePagination"
+                    style="display:flex; justify-content:center; gap:10px; margin:20px 0;"></div>
+            </div>
+        </div>
+
+        <!-- CHAPTERS LIST -->
+        <div id="screen-chapters" aria-hidden="true" class="container hidden">
+
+            <div class="pagination" id="chapterPagination"
+                style="display:flex; justify-content:center; gap:10px; margin:20px 0;"></div>
+
+            <div
+                style="padding: 1.5rem 0 0.5rem; color: var(--text-sub); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                Danh sách chương</div>
+
+            <!-- REDESIGNED FILTER TOOLBAR -->
+            <div class="filter-toolbar">
+                <!-- Segmented Control for State -->
+                <div class="segmented-control">
+                    <div id="seg-all" class="segment-item active" onclick="setFilterState('all')">Tất cả</div>
+                    <div id="seg-pending" class="segment-item" onclick="setFilterState('pending')">Chưa dịch</div>
+                </div>
+
+                <!-- Styled Sort Button -->
+                <div class="sort-btn-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18M7 12h10M10 18h4" />
+                    </svg>
+                    <select id="sortOption" class="sort-select" onchange="applyFilters()">
+                        <option value="num_asc">Chương: Thấp → Cao</option>
+                        <option value="num_desc">Chương: Cao → Thấp</option>
+                        <option value="time_new">Ngày: Mới nhất</option>
+                        <option value="time_old">Ngày: Cũ nhất</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- BATCH ACTION (Appears only when Pending is filtered) -->
+            <div id="batchActionBar" class="batch-action-bar hidden">
+                <span style="font-size: 0.9rem; font-weight: 600;">Danh sách chưa dịch</span>
+                <button class="btn-xs" onclick="handleManagePending()"
+                    style="background: var(--warning); color: #443200; border: none; font-weight: 700; padding: 8px 16px;">Dịch
+                    nhanh</button>
+            </div>
+
+            <div id="chapterList" class="chapter-list"></div>
+            <div class="pagination" id="chapterPagination2"
+                style="display:flex; justify-content:center; gap:10px; margin:20px 0;"></div>
+        </div>
+
+        <!-- READER -->
+        <div id="screen-reader" class="reader-view hidden">
+            <div class="reader-container" id="readerContainer"></div>
+
+            <div id="loadingNext" aria-hidden="true" class="hidden" style="text-align: center; padding: 3rem; color: var(--accent);">
+                <div class="fade-in">✦ Đang tải chương tiếp...</div>
+            </div>
+            <!-- <div style="height: 100px;"></div> -->
+        </div>
+    </main>
+
+    <!-- GLASS DOCK (Mobile Navigation) -->
+    <nav class="glass-dock" id="glassDock" aria-hidden="true">
+
+        <button class="dock-btn" id="btnPrev" onclick="navManual('prev')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
+        </button>
+
+
+
+        <button class="dock-btn" onclick="handleTranslate()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                stroke-linejoin="round" width="20" height="20">
+                <!-- left stylized 'A' card -->
+                <rect x="2" y="3.5" width="8" height="13" rx="1" />
+                <path d="M4.2 11h3" />
+                <path d="M3.2 14.2L5.2 8.6L7.2 14.2" />
+
+                <!-- right '文'-like card -->
+                <rect x="14" y="3.5" width="8" height="13" rx="1" />
+                <path d="M16.5 8.5h4" />
+                <path d="M16.5 11.5h4" />
+                <path d="M16.5 14.5h4" />
+
+                <!-- two small curved arrows between them -->
+                <path d="M11 9.5c0.8-1 2-1.7 3.3-1.9" />
+                <polyline points="14.8 7.3 15.6 6 13.6 6.4" />
+                <path d="M13.5 16.5c-0.9 1-2.1 1.7-3.4 1.9" />
+                <polyline points="9.8 18.7 9 20 11 19.6" />
+            </svg>
+        </button>
+
+
+
+
+        <button class="dock-btn main-action" onclick="toggleDrawer('menu')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+        </button>
+
+
+
+        <!-- NEW BUTTON: Spell Check / Report (NOW: Edit Word Sheet) -->
+        <button class="dock-btn" id="btnReport" onclick="openEditWordSheet()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        </button>
+
+
+        <button class="dock-btn" id="btnNext" onclick="navManual('next')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6" />
+            </svg>
+        </button>
+
+    </nav>
+
+    <!-- SELECTION ACTION (Pill Shape) -->
+    <div id="selectionTooltip" class="hidden" onmousedown="event.preventDefault(); openEditWordSheet();"
+        ontouchstart="event.preventDefault(); openEditWordSheet()" aria-hidden="true">
+        <button class="tooltip-btn">
+            <span class="tooltip-icon">✎</span>
+            <!-- <span>Báo lỗi đoạn này</span> -->
+        </button>
+        <!-- <button class="tooltip-btn" onclick="event.stopPropagation(); copySelection();">
+            <span class="tooltip-icon">📋</span>
+        </button> -->
+    </div>
+
+    <!-- GLOBAL OVERLAY -->
+    <div class="sheet-overlay" id="sheetOverlay" onclick="closeAllDrawers()" aria-hidden="true"></div>
+
+    <!-- TRANSLATION SHEET -->
+    <div class="bottom-sheet" id="translationSheet" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Cấu hình Dịch AI</div>
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+        </div>
+        <div class="sheet-body">
+            <!-- Tabs -->
+            <div class="tab-group">
+                <div class="tab-item active" id="tabBtnCurrent" onclick="switchTransTab('current')">Hiện tại</div>
+                <div class="tab-item" id="tabBtnBatchChapter" onclick="switchTransTab('batch_chapter')">Nhiều chương
+                </div>
+                <div class="tab-item" id="tabBtnStory" onclick="switchTransTab('story')">Truyện</div>
+            </div>
+
+
+            <div id="tabContentCurrent">
+                <div id="tabContentCurrentText"
+                    style="padding:10px 0; color:var(--accent); font-weight:600; text-align:center; margin-bottom:10px;">
+                    Dịch và đọc ngay chương đang mở
+                </div>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="form-group">
+                <label class="form-label">Chọn Model AI</label>
+                <select id="aiModelSelect" class="form-select">
+                    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                </select>
+            </div>
+
+            <!-- Tab Content: Current -->
+
+
+            <!-- Tab Content: Batch Chapter -->
+            <div id="tabContentBatchChapter" class="hidden">
+                <div class="form-group">
+                    <label class="form-label">Cấu hình tải danh sách</label>
+                    <div style="display:flex; gap:10px; margin-bottom:16px;">
+                        <select id="batchLoadMode" class="form-select" style="margin-bottom:0; flex:1;"
+                            onchange="loadBatchChapters()">
+                            <option value="all">Tất cả chương</option>
+                            <option value="pending">Chương chưa dịch</option>
+                        </select>
+                        <input type="number" id="batchLoadLimit" class="report-input" value="50000" placeholder="Limit"
+                            style="margin-bottom:0; width: 80px;" onchange="loadBatchChapters()">
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="form-label" style="margin-bottom:0">Danh sách chương</label>
+                        <div style="display:flex; gap:8px;">
+                            <span class="tag" onclick="toggleBatchSelection(true)" style="cursor:pointer;">Tất cả</span>
+                            <span class="tag" onclick="selectBatchRange()"
+                                style="cursor:pointer; background:rgba(71, 255, 87, 0.15); color:#2ecc71;">Phạm
+                                vi</span>
+                            <span class="tag" onclick="toggleBatchSelection(false)"
+                                style="background:rgba(255,255,255,0.1); color:#ccc; cursor:pointer;">Bỏ</span>
+                        </div>
+                    </div>
+
+                    <div class="book-select-container">
+                        <input type="text" class="book-search-input" id="transChapterSearch"
+                            placeholder="Lọc trong danh sách đã tải..." oninput="filterTranslationChapters(this.value)">
+                        <div class="book-checkbox-list" id="transChapterList">
+                            <div style="padding:10px;color:#888;text-align:center;">Hãy chọn chế độ và tải danh sách
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Story -->
+            <div aria-hidden="true" id="tabContentStory" class="hidden">
+                <div class="form-group">
+                    <label class="form-label">Chọn truyện cần dịch</label>
+                    <div class="book-select-container">
+                        <input type="text" class="book-search-input" id="transBookSearch"
+                            placeholder="Tìm tên truyện..." oninput="filterTranslationBooks(this.value)">
+                        <div class="book-checkbox-list" id="transBookList">
+                            <!-- Populated by JS -->
+                            <div style="padding:10px;color:#888;">Đang tải danh sách...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Word Limits -->
+            <div aria-hidden="true" class="form-group flex-row">
+                <div style="flex:1">
+                    <label class="form-label">Min Words</label>
+                    <input type="number" id="transMinWords" class="report-input" value="100" style="margin-bottom:0">
+                </div>
+                <div style="flex:1">
+                    <label class="form-label">Max Words</label>
+                    <input type="number" id="transMaxWords" class="report-input" value="500" style="margin-bottom:0">
+                </div>
+
+                <div style="flex:1">
+                    <label class="form-label">Temperature</label>
+                    <input type="number" id="transTemperature" class="report-input" value="0" step="0.01" min="0"
+                        max="1" style="margin-bottom:0">
+                </div>
+            </div>
+
+            <!-- Toggle Scope -->
+            <div aria-hidden="true" class="form-group"
+                style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0px;">
+                <label aria-hidden="true" class="form-label" style="margin-bottom:0">Dịch lại tất cả (kể cả đã thành
+                    công)</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="transScopeToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div aria-hidden="true" style="font-size:0.8rem; color:#64748b; margin-top:-10px; margin-bottom:20px;">
+                Tắt: Chỉ dịch phần thất bại • Bật: Dịch lại toàn bộ
+            </div>
+
+            <!-- Actions -->
+            <button aria-hidden="true" class="btn-primary" id="btnSubmitTransSheet" onclick="submitTranslation()">Bắt
+                đầu dịch</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div class="modal-overlay" id="confirmModal" aria-hidden="true">
+        <div class="confirm-card">
+            <div class="confirm-title">Xác nhận dịch</div>
+            <div style="border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:15px; padding-bottom:5px;">
+                <div class="confirm-detail"><span>Chế độ:</span> <span id="confMode" class="confirm-value"></span></div>
+                <div class="confirm-detail"><span>Model:</span> <span id="confModel" class="confirm-value"></span></div>
+                <div class="confirm-detail"><span>Phạm vi:</span> <span id="confScope" class="confirm-value"></span>
+                </div>
+                <div class="confirm-detail"><span>Batch Size:</span> <span id="confBatch" class="confirm-value"></span>
+                </div>
+                <div class="confirm-detail"><span>Số lượng:</span> <span id="confCount" class="confirm-value"></span>
+                </div>
+            </div>
+
+            <div style="font-size:0.85rem; font-weight:600; color:#cbd5e1; margin-bottom:5px;">Danh sách chọn:</div>
+            <div class="confirm-list-container" id="confList">
+                <!-- List Items Here -->
+            </div>
+
+            <div style="font-size:0.8rem; color:#94a3b8; line-height:1.4; margin-top:15px;">
+                Yêu cầu sẽ được gửi 1 lần duy nhất vào hàng đợi xử lý nền.
+            </div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeConfirmModal()">Hủy</button>
+                <button class="btn-primary" id="btnRealSubmit" onclick="confirmTranslation()">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- EDIT WORD SHEET (REPLACED REPORT SHEET) -->
+    <div class="bottom-sheet" id="editWordSheet" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Quản lý từ thay thế</div>
+
+            <label class="toggle-switch">
+                <input type="checkbox" id="wordReplaceToggle" onchange="toggleWordReplacement(this.checked)">
+                <span class="toggle-slider"></span>
+            </label>
+
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+
+            
+        </div>
+        <div class="sheet-body">
+
+            <!-- List of Words -->
+            <div class="form-group">
+                <!-- <label class="form-label">Danh sách từ</label> -->
+                <div class="form-group-header">
+                    <input type="text" id="wordSearchInput" class="report-input" placeholder="Tìm từ..."
+                        style="width:55%; height: 100%; margin:15px;" oninput="searchWordList()">
+
+                    <select id="wordFilterSelect" class="form-select" style="width:25%; height: 100%; margin-left:auto;"
+                        onchange="filterWordList()">
+                        <option value="all">Tất cả</option>
+                        <option value="chapter">Chapter</option>
+                        <option value="book">Book</option>
+                        <option value="global">Global</option>
+                    </select>
+
+                </div>
+
+                <div class="word-list-container" id="wordListContainer">
+                    <div style="padding:20px; text-align:center; color:#888;">Đang tải...</div>
+                </div>
+            </div>
+
+
+
+
+            <!-- Scope Selection (Segmented Control) -->
+            <div class="form-group">
+                <label class="form-label">Phạm vi áp dụng</label>
+                <div class="segmented-control" id="wordScopeControl">
+                    <div class="segment-item" onclick="selectWordScope('chapter')" id="scope-chapter">Chapter</div>
+                    <div class="segment-item active" onclick="selectWordScope('book')" id="scope-book">Book</div>
+                    <div class="segment-item" onclick="selectWordScope('global')" id="scope-global">Global</div>
+                </div>
+                <input type="hidden" id="selectedWordScope" value="book">
+            </div>
+
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:16px 0;">
+
+            <!-- Add/Edit Form -->
+            <div class="form-group">
+                <label class="form-label">Thêm / Sửa từ</label>
+                <div class="form-label-input">
+                    <input type="text" style="width: 50%; margin: 5px" class="report-input" id="wordOriginal"
+                        placeholder="Match">
+                    <input type="text" style="width: 50%; margin: 5px" class="report-input" id="wordReplace"
+                        placeholder="Replacement">
+                </div>
+
+            </div>
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:16px 0;">
+
+            <!-- Actions -->
+            <button class="btn-primary" onclick="saveWordReplacement()">Lưu thay đổi</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS SHEET -->
+    <div class="bottom-sheet" id="settingsSheet" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Cài đặt giao diện</div>
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+        </div>
+        <div class="sheet-body">
+
+            <div class="setting-row">
+                <span>Tự động tải chương</span>
+                <!-- Simple CSS Switch -->
+                <div style="position:relative; width:44px; height:24px; background:#2e3a52; border-radius:12px; cursor:pointer;"
+                    onclick="toggleLazyLoad(this)">
+                    <div id="lazyToggleCircle"
+                        style="position:absolute; top:2px; left:2px; width:20px; height:20px; background:white; border-radius:50%; transition:0.3s;">
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="setting-row">
+                <div class="row-items">
+                    <span>Front Size</span>
+                    <div class="font-controls">
+                        <button class="font-btn" onclick="changeFontSize(-1)">A-</button>
+                        <div style="display:flex;align-items:center;padding:0 10px;font-weight:bold"
+                            id="fontSizeDisplay">18
+                        </div>
+                        <button class="font-btn" onclick="changeFontSize(1)">A+</button>
+                    </div>
+                </div>
+
+
+                <div class="row-items">
+                    <span>Word Spacing</span>
+                    <div class="font-controls">
+                        <button class="font-btn" onclick="changeWordSpacing(-1)">A-</button>
+                        <div style="display:flex;align-items:center;padding:0 10px;font-weight:bold"
+                            id="wordSpacingDisplay">0
+                        </div>
+                        <button class="font-btn" onclick="changeWordSpacing(1)">A+</button>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <div class="setting-row">
+
+
+                <div class="row-items">
+                    <span>Group Lines</span>
+                    <div class="font-controls">
+                        <button class="font-btn" onclick="changeSentenceCount(-1)">A-</button>
+                        <div style="display:flex;align-items:center;padding:0 10px;font-weight:bold"
+                            id="sentenceCountDisplay">1
+                        </div>
+                        <button class="font-btn" onclick="changeSentenceCount(1)">A+</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+            <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
+                <span>Phông chữ</span>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; width:100%;">
+                    <div class="chip active" style="text-align:center;justify-content:center;"
+                        data-font="'Merriweather', serif" onclick="changeFont(this)">Serif</div>
+                    <div class="chip" style="text-align:center;justify-content:center;"
+                        data-font="'Quicksand', sans-serif" onclick="changeFont(this)">Sans</div>
+                    <div class="chip" style="text-align:center;justify-content:center;"
+                        data-font="'Patrick Hand', cursive" onclick="changeFont(this)">Viết tay</div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- SIDE DRAWERS -->
+    <div class="side-drawer" id="menuDrawer" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Danh sách chương</div>
+            <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+        </div>
+        <div class="sheet-body" id="menuBody" style="padding:0;"></div>
+    </div>
+
+    <div class="side-drawer" id="historyDrawer" aria-hidden="true">
+        <div class="sheet-header">
+            <div class="sheet-title">Lịch sử đọc</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="icon-btn small" onclick="clearHistory()" title="Xóa tất cả lịch sử">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </button>
+                <div class="sheet-close" onclick="closeAllDrawers()">✕</div>
+            </div>
+        </div>
+        <div class="sheet-body" id="historyBody" style="padding:0;"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
